@@ -48,8 +48,19 @@ def main():
         ims.append(cv2.imread(f))
     im = cv2.hconcat(ims)
     print(im.shape)
-    x = im.shape[1]
-    cv2.imwrite('./c.jpg', np.concatenate(np.array([im.reshape(100,10,x//10,3)[:,i,:,:] for i in range(10)])))
+    aspect = 1.0
+    np_y, np_x_all, _ = im.shape
+    num_row = 15
+    np_x_add = num_row - np_x_all % num_row
+    im = np.concatenate([im, np.zeros(100*3*np_x_add).reshape(100, np_x_add, 3)], axis=1)
+    np_y, np_x_all, _ = im.shape
+    print(np_x_add)
+    print(im.shape)
+    cv2.imwrite('./c.jpg', np.concatenate(np.array([im.reshape(100,num_row, np_x_all//num_row,3)[:,i,:,:] for i in range(num_row)])))
+
+
+
+
 
 if __name__ == '__main__':
     main()
