@@ -39,7 +39,7 @@ def main():
         ax = fig.add_axes((0,0,1,1), facecolor='#eeeeee')
         ax.plot(times, signaldata, color='#ff4444')
         plt.xlim(0,times[-1])
-        plt.savefig(imagefiles[i])
+        plt.savefig(imagefiles[i], dpi=100)
         plt.close()
 
     ims = []
@@ -50,7 +50,7 @@ def main():
     print(im.shape)
     aspect = 1.0
     np_y, np_x_all, _ = im.shape
-    num_row = 15
+    num_row = int(np.sqrt(np_y*np_x_all)/100)
     np_x_add = num_row - np_x_all % num_row
     im = np.concatenate([im, np.zeros(100*3*np_x_add).reshape(100, np_x_add, 3)], axis=1)
     np_y, np_x_all, _ = im.shape
