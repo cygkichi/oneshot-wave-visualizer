@@ -33,7 +33,7 @@ def make_unitimage(wavefile, imagefile):
     label_alpha = 1.0
     helical_edge_color = '#232323'
     vartical_edge_color = '#ff5470'
-    background_color = '#f45d48'
+    background_color = '#f5f5dc'
     line_color = '#078080'
     yrange=(-1,1)
 
@@ -48,15 +48,21 @@ def make_unitimage(wavefile, imagefile):
     y0, y1 = yrange
     xs, ys = times, signaldata
     fig = plt.figure(figsize=(times[-1], 1))
-    ax = fig.add_axes((0,0,1,1), facecolor=background_color)
+    ax = fig.add_axes((0,0,1,1))
     ax.axis('off')
+    ax.tick_params(bottom=False,left=False,right=False,top=False)
     ax.set_xlim(x0, x1)
     ax.set_ylim(y0, y1)
-    # show helical,vartical line
-    ax.plot([x0,x1], [y0, y0], color=helical_edge_color)
-    ax.plot([x0,x1], [y1, y1], color=helical_edge_color)
+
+    # show background color
+    ax.fill_between([x0,x1],[y0,y0],[y1,y1],
+                    facecolor=background_color)
+
+    # show helical,vartical linep
     ax.plot([x0,x0], [y0, y1], color=vartical_edge_color)
     ax.plot([x1,x1], [y0, y1], color=vartical_edge_color)
+    ax.plot([x0,x1], [y0, y0], color=helical_edge_color)
+    ax.plot([x0,x1], [y1, y1], color=helical_edge_color)
 
     # show label
     if is_showlabel:
