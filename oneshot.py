@@ -14,34 +14,88 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
+def parse_config():
+    config={}
+    return config
+
+def parse_input():
+    args = parse_arguments()
+    config = parse_config()
+    datadir = os.path.abspath(args.input)
+    wavefiles = np.sort([f for f in glob.glob(datadir+'/*')
+                         if os.path.isfile(f)])
+    return wavefiles, config
+
+def make_unitimage(wavefile, imagefile):
+    is_showlabel = True
+    label_size = 15
+    label_color = '#ff5470'
+    label_alpha = 1.0
+    helical_edge_color = '#232323'
+    vartical_edge_color = '#ff5470'
+    background_color = '#f45d48'
+    line_color = '#078080'
+    yrange=(-1,1)
+
+    signaldata, samplerate = sf.read(wavefile)
+    num_channel = len(signaldata.shape)
+    if num_channel != 1:
+        signaldata = signaldata.mean(axis=1)
+    num_signals = len(signaldata)
+    times = np.arange(num_signals) / samplerate
+
+    x0, x1 = 0, times[-1]
+    y0, y1 = yrange
+    xs, ys = times, signaldata
+    fig = plt.figure(figsize=(times[-1], 1))
+    ax = fig.add_axes((0,0,1,1), facecolor=background_color)
+    ax.axis('off')
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+    # show helical,vartical line
+    ax.plot([x0,x1], [y0, y0], color=helical_edge_color)
+    ax.plot([x0,x1], [y1, y1], color=helical_edge_color)
+    ax.plot([x0,x0], [y0, y1], color=vartical_edge_color)
+    ax.plot([x1,x1], [y0, y1], color=vartical_edge_color)
+
+    # show label
+    if is_showlabel:
+        label_text = wavefile.split('/')[-1]
+        label_xpos = 0.1
+        label_ypos = yrange[0]*0.9 + yrange[1]*0.1
+        ax.text(label_xpos,
+                 label_ypos,
+                 label_text,
+                 fontsize=label_size,
+                 alpha=label_alpha,
+                 color=label_color)
+
+    # show signal line
+    ax.plot(xs, ys, color=line_color)
+
+    plt.savefig(imagefile, dpi=100)
+    plt.close()
+
 
 def main():
     args = parse_arguments()
     tmpdir = os.path.abspath('./tmp-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
     os.mkdir(tmpdir)
-    datadir = os.path.abspath(args.input)
-    filenames = np.sort([f for f in glob.glob(datadir+'/*') if os.path.isfile(f)])
-    numfiles = len(filenames)
-    imagefiles = np.array([tmpdir + '/' + f.split('/')[-1].replace('.wav','.png') for f in filenames])
+
+    # input
+    wavefiles, config = parse_input()
+
+    # make jpg
+    imagefiles = []
+    numfiles = len(wavefiles)
     audiolengths = np.zeros(numfiles, dtype=np.float32)
-    for i, f in enumerate(filenames):
+    for i, f in enumerate(wavefiles):
         print(f)
-        signaldata, samplerate = sf.read(f)
-        num_channel = len(signaldata.shape)
-        if num_channel != 1:
-            signaldata = signaldata.mean(axis=1)
-        num_signals = len(signaldata)
-        times = np.arange(num_signals) / samplerate
+        imagefile = tmpdir + '/' + f.split('/')[-1].replace('.wav', '.jpg')
+        make_unitimage(f, imagefile)
+        imagefiles.append(imagefile)
 
-        audiolengths[i] = times[-1]
-
-        fig = plt.figure(figsize=(times[-1], 1))
-        ax = fig.add_axes((0,0,1,1), facecolor='#eeeeee')
-        ax.plot(times, signaldata, color='#ff4444')
-        plt.xlim(0,times[-1])
-        plt.savefig(imagefiles[i], dpi=100)
-        plt.close()
-
+    # marge image
     ims = []
     for f in imagefiles:
         print(f)
@@ -56,7 +110,7 @@ def main():
     np_y, np_x_all, _ = im.shape
     print(np_x_add)
     print(im.shape)
-    cv2.imwrite('./c.jpg', np.concatenate(np.array([im.reshape(100,num_row, np_x_all//num_row,3)[:,i,:,:] for i in range(num_row)])))
+    cv2.imwrite('./tile.jpg', np.concatenate(np.array([im.reshape(100,num_row, np_x_all//num_row,3)[:,i,:,:] for i in range(num_row)])))
 
 
 
