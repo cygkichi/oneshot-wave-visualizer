@@ -1,6 +1,8 @@
 import os
 import cv2
 import glob
+import json
+import shutil
 import datetime
 import argparse
 import numpy as np
@@ -11,31 +13,34 @@ import matplotlib.pyplot as plt
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('input')
+    parser.add_argument('-c', '--config', default='./config.json')
     args = parser.parse_args()
     return args
 
-def parse_config():
-    config={}
+def parse_config(config_json):
+    with open(config_json) as f:
+        config=json.load(f)
+    print(config)
     return config
 
 def parse_input():
     args = parse_arguments()
-    config = parse_config()
+    config = parse_config(args.config)
     datadir = os.path.abspath(args.input)
     wavefiles = np.sort([f for f in glob.glob(datadir+'/*')
                          if os.path.isfile(f)])
     return wavefiles, config
 
-def make_unitimage(wavefile, imagefile):
-    is_showlabel = True
-    label_size = 15
-    label_color = '#ff5470'
-    label_alpha = 1.0
-    helical_edge_color = '#232323'
-    vartical_edge_color = '#ff5470'
-    background_color = '#f5f5dc'
-    line_color = '#078080'
-    yrange=(-1,1)
+def make_unitimage(wavefile, imagefile, config):
+    is_showlabel = config["is_showlabel"]
+    label_size = config["label_size"]
+    label_color = config["label_color"]
+    label_alpha = config["label_alpha"]
+    helical_edge_color = config["helical_edge_color"]
+    vartical_edge_color = config["vartical_edge_color"]
+    background_color = config["background_color"]
+    line_color = config["line_color"]
+    yrange=config["yrange"]
 
     signaldata, samplerate = sf.read(wavefile)
     num_channel = len(signaldata.shape)
@@ -82,33 +87,15 @@ def make_unitimage(wavefile, imagefile):
     plt.savefig(imagefile, dpi=100)
     plt.close()
 
-
-def main():
-    args = parse_arguments()
-    tmpdir = os.path.abspath('./tmp-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
-    os.mkdir(tmpdir)
-
-    # input
-    wavefiles, config = parse_input()
-
-    # make jpg
-    imagefiles = []
-    numfiles = len(wavefiles)
-    audiolengths = np.zeros(numfiles, dtype=np.float32)
-    for i, f in enumerate(wavefiles):
-        print(f)
-        imagefile = tmpdir + '/' + f.split('/')[-1].replace('.wav', '.jpg')
-        make_unitimage(f, imagefile)
-        imagefiles.append(imagefile)
-
-    # marge image
+def marge_images(imagefiles, config):
+    aspect = config["aspect"]
+    imagefile = config["imagename"]
     ims = []
     for f in imagefiles:
         print(f)
         ims.append(cv2.imread(f))
-    im = cv2.hconcat(ims)
+        im = cv2.hconcat(ims)
     print(im.shape)
-    aspect = 1.0
     np_y, np_x_all, _ = im.shape
     num_row = int(np.sqrt(np_y*np_x_all)/100)
     np_x_add = num_row - np_x_all % num_row
@@ -116,10 +103,34 @@ def main():
     np_y, np_x_all, _ = im.shape
     print(np_x_add)
     print(im.shape)
-    cv2.imwrite('./tile.jpg', np.concatenate(np.array([im.reshape(100,num_row, np_x_all//num_row,3)[:,i,:,:] for i in range(num_row)])))
+    cv2.imwrite(imagefile, np.concatenate(np.array([im.reshape(100,num_row, np_x_all//num_row,3)[:,i,:,:] for i in range(num_row)])))
+
+def main():
+    try:
+        args = parse_arguments()
+        tmpdir = os.path.abspath('./tmp-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
+        os.mkdir(tmpdir)
+
+        # input
+        wavefiles, config = parse_input()
+
+        # make jpg
+        imagefiles = []
+        numfiles = len(wavefiles)
+        audiolengths = np.zeros(numfiles, dtype=np.float32)
+        for i, f in enumerate(wavefiles):
+            print(f)
+            imagefile = tmpdir + '/' + f.split('/')[-1].replace('.wav', '.jpg')
+            make_unitimage(f, imagefile, config["unitimage"])
+            imagefiles.append(imagefile)
+
+        # marge image
+        marge_images(imagefiles, config["margeimage"])
 
 
-
+    finally:
+        shutil.rmtree(tmpdir)
+        print('end')
 
 
 if __name__ == '__main__':

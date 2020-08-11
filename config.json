@@ -1,0 +1,19 @@
+{
+    "common":{
+    },
+    "unitimage":{
+        "is_showlabel" : true ,
+        "label_size"   : 15 ,
+        "label_color"  : "#ff5470" ,
+        "label_alpha"  : 1.0 ,
+        "helical_edge_color"  : "#232323" ,
+        "vartical_edge_color" : "#ff5470" ,
+        "background_color"    : "#f5f5dc" ,
+        "line_color"          : "#078080" ,
+        "yrange" : [-1, 1]
+    },
+    "margeimage":{
+        "aspect" : 1.0,
+        "imagename" : "./tile.jpg"
+    }
+}
