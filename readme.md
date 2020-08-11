@@ -31,7 +31,8 @@ python3 -m venv ./venv
 source ./venv/bin/activate
 
 # Install modules
-pip3 install -r requestments.txt
+pip install --upgrade pip
+pip install -r requestments.txt
 
 # run oneshot.py
 python oneshot.py ./sample_data
